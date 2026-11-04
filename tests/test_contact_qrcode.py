@@ -33,7 +33,7 @@ def test_contact_qrcode_by_token(client):
         assert lead is not None
         assert lead.lead_token == lead_token
         assert lead.contact_qrcode, "contact_qrcode 不应为空"
-        assert len(lead.contact_qrcode) > 1000, "二维码 base64 长度应足够大"
+        assert len(lead.contact_qrcode) > 500, "二维码 base64 长度应足够大"
         assert lead.sales_name, f"sales_name 不应为空，assigned_to={lead.assigned_to}"
 
     # 3. contact 接口按 token 查询

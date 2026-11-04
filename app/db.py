@@ -4,14 +4,21 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.config import settings
+from app.models import Base
 
-if settings.db_url.startswith("sqlite:///"):
-    db_path = settings.db_url.replace("sqlite:///", "", 1)
-    if db_path and not db_path.startswith(":memory:"):
-        Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+def _make_engine(db_url: str | None = None):
+    url = db_url or settings.db_url
+    if url.startswith("sqlite:///"):
+        db_path = url.replace("sqlite:///", "", 1)
+        if db_path and not db_path.startswith(":memory:") and "mode=memory" not in url:
+            Path(db_path).parent.mkdir(parents=True, exist_ok=True)
 
-connect_args = {"check_same_thread": False} if settings.db_url.startswith("sqlite") else {}
-engine = create_engine(settings.db_url, connect_args=connect_args, future=True)
+    connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
+    eng = create_engine(url, connect_args=connect_args, future=True)
+    Base.metadata.create_all(bind=eng)
+    return eng
+
+engine = _make_engine()
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False, class_=Session)
 
 
