@@ -1,0 +1,37 @@
+<!-- pages/contact/index.ttml -->
+<view class="container">
+  <!-- 错误提示 -->
+  <view wx:if="{{error}}" class="error">{{error}}</view>
+
+  <!-- 加载中 -->
+  <view wx:elif="{{loading}}" class="loading">
+    <view class="spinner"></view>
+    <view class="loading-text">正在加载您的专属顾问...</view>
+  </view>
+
+  <!-- 活码展示 -->
+  <view wx:else class="content">
+    <view class="title">添加企业微信，专属顾问 1 对 1 服务</view>
+
+    <view class="sales-card">
+      <view class="sales-label">您的专属顾问</view>
+      <view class="sales-name">{{salesName}}</view>
+    </view>
+
+    <view class="qrcode-wrap">
+      <image
+        class="qrcode"
+        src="data:image/png;base64,{{qrcodeBase64}}"
+        mode="widthFix"
+      />
+      <view class="tip">长按二维码 → 选择「识别图中的二维码」→ 添加企业微信</view>
+    </view>
+
+    <view class="actions">
+      <button bindtap="onAddedWechat" class="primary">我已添加企业微信</button>
+      <button bindtap="onCopiedLink" class="secondary">复制活码链接</button>
+    </view>
+
+    <view class="footer">兑换码仅在平台订单支付后按订单发放，不在聊天中发送</view>
+  </view>
+</view>

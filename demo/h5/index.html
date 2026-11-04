@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>抖音小程序活码查询 Demo（H5 Mock）</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; background: #f5f6fa; padding: 24px; }
+        .container { max-width: 480px; margin: 0 auto; background: #fff; border-radius: 12px; padding: 28px; box-shadow: 0 2px 12px rgba(0,0,0,.06); }
+        h1 { font-size: 18px; margin-bottom: 20px; color: #2c3e50; text-align: center; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-size: 13px; color: #666; margin-bottom: 6px; }
+        input { width: 100%; padding: 10px 12px; border: 1px solid #dcdfe6; border-radius: 6px; font-size: 14px; }
+        input:focus { border-color: #1677ff; outline: none; }
+        .row { display: flex; gap: 10px; align-items: center; }
+        .row input { flex: 1; }
+        button { width: 100%; padding: 12px; background: #1677ff; color: #fff; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; margin-top: 8px; }
+        button:hover { background: #4096ff; }
+        button.secondary { background: #f0f2f5; color: #333; }
+        button.secondary:hover { background: #e6e8eb; }
+        .divider { text-align: center; color: #999; font-size: 12px; margin: 20px 0; }
+        .result { margin-top: 20px; display: none; }
+        .result.show { display: block; }
+        .sales-card { background: #f8f9fc; border-radius: 8px; padding: 14px; margin-bottom: 16px; }
+        .sales-label { font-size: 12px; color: #888; }
+        .sales-name { font-size: 16px; font-weight: 600; margin-top: 4px; }
+        .qrcode-wrap { text-align: center; }
+        .qrcode-wrap img { width: 220px; height: 220px; border: 1px solid #eee; border-radius: 8px; }
+        .tip { font-size: 13px; color: #666; margin-top: 12px; line-height: 1.6; }
+        .link { display: block; margin-top: 16px; font-size: 12px; color: #999; word-break: break-all; }
+        .error { color: #e74c3c; font-size: 13px; margin-top: 12px; }
+        .loading { color: #666; font-size: 13px; margin-top: 12px; text-align: center; }
+        .api-config { margin-bottom: 16px; padding: 12px; background: #fffbe6; border-radius: 6px; font-size: 12px; color: #8b6914; line-height: 1.6; }
+        .api-config input { width: 100%; margin-top: 6px; font-size: 12px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📱 抖音小程序活码查询 Demo</h1>
+
+    <div class="api-config">
+        <label>CRM 后端地址：</label>
+        <input id="apiBase" placeholder="http://localhost:8000" value="http://localhost:8000">
+    </div>
+
+    <div class="form-group">
+        <label>线索 Token（推荐）</label>
+        <input id="tokenInput" placeholder="粘贴线索的 lead_token，例如 550e8400-e29b-41d4-a716-446655440000">
+    </div>
+
+    <div class="form-group">
+        <label>或 手机号（fallback）</label>
+        <input id="mobileInput" placeholder="客户手机号，例如 13800138000">
+    </div>
+
+    <div class="row">
+        <button onclick="fetchQRCode()">🔍 查询活码二维码</button>
+    </div>
+    <button class="secondary" onclick="testGenerate()">🧪 生成测试线索（需后端开启）</button>
+
+    <div id="loading" class="loading" style="display:none;">查询中...</div>
+    <div id="error" class="error"></div>
+
+    <div id="result" class="result">
+        <div class="sales-card">
+            <div class="sales-label">您的专属顾问</div>
+            <div class="sales-name" id="salesName">—</div>
+        </div>
+        <div class="qrcode-wrap">
+            <img id="qrcodeImg" alt="企业微信活码" />
+            <div class="tip">长按二维码 → 选择「识别图中的二维码」→ 添加企业微信</div>
+        </div>
+        <a id="link" class="link" target="_blank"></a>
+    </div>
+</div>
+
+<script>
+async function fetchQRCode() {
+    const base = document.getElementById('apiBase').value.replace(/\/$/, '');
+    const token = document.getElementById('tokenInput').value.trim();
+    const mobile = document.getElementById('mobileInput').value.trim();
+    const loading = document.getElementById('loading');
+    const error = document.getElementById('error');
+    const result = document.getElementById('result');
+
+    loading.style.display = 'block';
+    error.textContent = '';
+    result.classList.remove('show');
+
+    const params = new URLSearchParams();
+    if (token) params.append('token', token);
+    if (mobile) params.append('mobile', mobile);
+
+    try {
+        const resp = await fetch(`${base}/api/contact/qrcode?${params.toString()}`, {
+            headers: { 'X-Internal-Key': 'demo-key' },
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.detail || '请求失败');
+
+        document.getElementById('salesName').textContent = data.sales_name;
+        document.getElementById('qrcodeImg').src = 'data:image/png;base64,' + data.qrcode_base64;
+        const link = document.getElementById('link');
+        link.textContent = '活码链接：' + data.link;
+        link.href = data.link;
+        result.classList.add('show');
+    } catch (e) {
+        error.textContent = '❌ ' + e.message;
+    } finally {
+        loading.style.display = 'none';
+    }
+}
+
+async function testGenerate() {
+    const base = document.getElementById('apiBase').value.replace(/\/$/, '');
+    const mobile = '139' + Math.floor(Math.random() * 90000000 + 10000000);
+    try {
+        const resp = await fetch(`${base}/api/leads/test-ingest?mobile=${mobile}`, { method: 'POST' });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.detail || '生成失败');
+        document.getElementById('tokenInput').value = data.lead_token || '';
+        document.getElementById('mobileInput').value = mobile;
+        document.getElementById('error').textContent = '✅ 已生成测试线索，点击「查询活码二维码」查看';
+    } catch (e) {
+        document.getElementById('error').textContent = '❌ 测试生成失败：' + e.message + '（需要后端加个 /api/leads/test-ingest 测试接口）';
+    }
+}
+</script>
+</body>
+</html>
